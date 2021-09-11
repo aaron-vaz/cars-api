@@ -86,4 +86,16 @@ class CarServiceTest {
         // then
         assertTrue(retrievedCar.isEmpty());
     }
+
+    @Test
+    void deleteCar_HappyPath_CarDeleted() {
+        // given
+        final UUID id = UUID.randomUUID();
+
+        // when
+        carService.deleteCar(id);
+
+        // then
+        verify(mockRepository).deleteById(id);
+    }
 }

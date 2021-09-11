@@ -46,6 +46,15 @@ class CarService {
         return repository.findById(id).map(CarService::convertToDto);
     }
 
+    /**
+     * Delete the {@link Car} entry in the db that matches the given id
+     *
+     * @param id the id of the {@link Car} to delete
+     */
+    void deleteCar(final UUID id) {
+        repository.deleteById(id);
+    }
+
     private static CarDto convertToDto(final Car car) {
         return new CarDto(
                 car.getId(), car.getMake(), car.getModel(), car.getColour(), car.getYear());

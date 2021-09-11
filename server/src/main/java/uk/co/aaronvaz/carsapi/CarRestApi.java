@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +50,11 @@ class CarRestApi {
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CarDto> retrieve(@Valid @PathVariable final UUID id) {
         return ResponseEntity.of(service.retrieveCar(id));
+    }
+
+    @DeleteMapping("/{id}")
+    void delete(@Valid @PathVariable final UUID id) {
+        service.deleteCar(id);
     }
 
     // Exception Handlers

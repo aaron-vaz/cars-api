@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -151,5 +152,62 @@ class CarRestApiTest {
 
         // then
         resultActions.andExpect(status().isBadRequest());
+
+        verify(mockCarService, never()).retrieveCar(any());
+    }
+
+    @Test
+    void retrieve_UncheckException_500ServerError() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        willThrow(RuntimeException.class).given(mockCarService).retrieveCar(id);
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(get("/api/v1/car/{id}", id).accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void delete_HappyPath_200Ok() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", id));
+
+        // then
+        resultActions.andExpect(status().isOk());
+
+        verify(mockCarService).deleteCar(id);
+    }
+
+    @Test
+    void delete_InvalidId_400BadRequest() throws Exception {
+        // given
+        final String invalidId = "invalid";
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", invalidId));
+
+        // then
+        resultActions.andExpect(status().isBadRequest());
+
+        verify(mockCarService, never()).deleteCar(any());
+    }
+
+    @Test
+    void delete_UncheckedError_500ServerError() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        willThrow(RuntimeException.class).given(mockCarService).deleteCar(id);
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", id));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
     }
 }
