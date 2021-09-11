@@ -1,5 +1,6 @@
 package uk.co.aaronvaz.carsapi;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -7,8 +8,9 @@ import org.springframework.stereotype.Service;
 import uk.co.aaronvaz.carsapi.datamuse.DatamuseRestApi;
 import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
-import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.CreateCarRequestV1;
 import uk.co.aaronvaz.carsapi.model.api.ModelDto;
+import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
 import uk.co.aaronvaz.carsapi.model.db.Car;
 
 @Service
@@ -23,13 +25,12 @@ class CarService {
     }
 
     /**
-     * Process a {@link CreateOrUpdateCarRequestV1} request to add a new {@link Car} entity to the
-     * DB
+     * Process a {@link CreateCarRequestV1} request to add a new {@link Car} entity to the DB
      *
      * @param request the request containing the data to add
      * @return A DTO object representing the newly created {@link Car} entity
      */
-    CarDto addCar(final CreateOrUpdateCarRequestV1 request) {
+    CarDto addCar(final CreateCarRequestV1 request) {
         final Car car =
                 new Car(
                         UUID.randomUUID(),
@@ -40,6 +41,25 @@ class CarService {
 
         final Car storedCar = repository.save(car);
         return convertToDto(storedCar);
+    }
+
+    /**
+     * Process a {@link UpdateCarRequestV1} request to update an existing car in the DB
+     *
+     * <p>The update is only carried out if the request contains new data Otherwise, no update is
+     * performed
+     *
+     * @param id the id of the existing car
+     * @param request the request that will be used to update the car
+     * @throws CarNotFoundException if the supplied id is for a non-existent Car
+     */
+    void updateCar(final UUID id, final UpdateCarRequestV1 request) throws CarNotFoundException {
+        final Optional<Car> storedCar = repository.findById(id);
+        if (storedCar.isEmpty()) {
+            throw new CarNotFoundException(id);
+        }
+
+        storedCar.flatMap(car -> updateCarFromRequest(request, car)).ifPresent(repository::save);
     }
 
     /**
@@ -72,5 +92,15 @@ class CarService {
         final ModelDto modelDto = new ModelDto(car.getModel(), homophones);
 
         return new CarDto(car.getId(), car.getMake(), modelDto, car.getColour(), car.getYear());
+    }
+
+    private Optional<Car> updateCarFromRequest(final UpdateCarRequestV1 request, final Car car) {
+        final String make = Objects.requireNonNullElse(request.getMake(), car.getMake());
+        final String model = Objects.requireNonNullElse(request.getModel(), car.getModel());
+        final String colour = Objects.requireNonNullElse(request.getColour(), car.getColour());
+        final Integer year = Objects.requireNonNullElse(request.getYear(), car.getYear());
+
+        final Car updatedCar = new Car(car.getId(), make, model, colour, year);
+        return Objects.equals(car, updatedCar) ? Optional.empty() : Optional.of(updatedCar);
     }
 }

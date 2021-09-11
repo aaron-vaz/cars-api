@@ -5,6 +5,7 @@ import java.util.UUID;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -14,13 +15,16 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
-import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.CreateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
 
 @Validated
 @RestController
@@ -36,7 +40,7 @@ class CarRestApiV1 {
     }
 
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<?> add(@Valid @RequestBody final CreateOrUpdateCarRequestV1 request) {
+    ResponseEntity<?> add(@Valid @RequestBody final CreateCarRequestV1 request) {
         final CarDto carDto = service.addCar(request);
         final URI carLocation =
                 ServletUriComponentsBuilder.fromCurrentRequest()
@@ -47,17 +51,29 @@ class CarRestApiV1 {
         return ResponseEntity.created(carLocation).build();
     }
 
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<?> update(
+            @PathVariable final UUID id, @RequestBody final UpdateCarRequestV1 request)
+            throws CarNotFoundException {
+        service.updateCar(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<CarDto> retrieve(@Valid @PathVariable final UUID id) {
+    ResponseEntity<CarDto> retrieve(@PathVariable final UUID id) {
         return ResponseEntity.of(service.retrieveCar(id));
     }
 
     @DeleteMapping("/{id}")
-    void delete(@Valid @PathVariable final UUID id) {
+    void delete(@PathVariable final UUID id) {
         service.deleteCar(id);
     }
 
     // Exception Handlers
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(CarNotFoundException.class)
+    void handleCarNotFound() {}
 
     @ExceptionHandler({
         MethodArgumentNotValidException.class,

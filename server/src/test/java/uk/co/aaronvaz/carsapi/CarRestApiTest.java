@@ -3,6 +3,7 @@ package uk.co.aaronvaz.carsapi;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.never;
@@ -10,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -17,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,6 +31,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
 import uk.co.aaronvaz.carsapi.model.api.ModelDto;
+import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
 
 @WebMvcTest(CarRestApiV1.class)
 class CarRestApiTest {
@@ -109,6 +114,87 @@ class CarRestApiTest {
 
         // then
         actions.andExpect(status().isInternalServerError());
+    }
+
+    @ValueSource(
+            strings = {
+                "{ \"make\": \"Ford\", \"model\": \"Kuga\", \"colour\": \"Green\", \"year\": 2020 }",
+                "{ \"year\": 2010 }"
+            })
+    @ParameterizedTest
+    void update_HappyPathAndPartialUpdate_204NoContent(final String request) throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        put("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isNoContent());
+
+        verify(mockCarService)
+                .updateCar(id, objectMapper.readValue(request, UpdateCarRequestV1.class));
+    }
+
+    @Test
+    void update_CarNotFound_404NotFound() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        final String request = "{ \"year\": 2000 }";
+
+        willThrow(CarNotFoundException.class).given(mockCarService).updateCar(eq(id), any());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        put("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_InvalidId_400badRequest() throws Exception {
+        // given
+        final String invalidId = "invalid";
+        final String request = "{ \"year\": 2000 }";
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        put("/api/v1/cars/{id}", invalidId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isBadRequest());
+
+        verify(mockCarService, never()).updateCar(any(), any());
+    }
+
+    @Test
+    void update_UncheckedException_500ServerError() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        final String request = "{ \"year\": 2000 }";
+
+        willThrow(RuntimeException.class).given(mockCarService).updateCar(eq(id), any());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        put("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
     }
 
     @Test

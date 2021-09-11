@@ -17,7 +17,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
 
-class RestApiV1Test {
+class DatamuseRestApiTest {
     private final RestTemplate mockRestTemplate = mock(RestTemplate.class);
 
     private final DatamuseRestApi restApiV1 = new DatamuseRestApi(mockRestTemplate);
