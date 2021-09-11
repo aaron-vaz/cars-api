@@ -2,11 +2,15 @@ package uk.co.aaronvaz.carsapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willAnswer;
+import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
@@ -48,5 +52,38 @@ class CarServiceTest {
         assertEquals(request.getModel(), carDto.getModel());
         assertEquals(request.getColour(), carDto.getColour());
         assertEquals(request.getYear(), carDto.getYear());
+    }
+
+    @Test
+    void retrieveCar_HappyPath_CarReturned() {
+        // given
+        final Car car = new Car(UUID.randomUUID(), "Hyundai", "i20", "Red", 2004);
+        willReturn(Optional.of(car)).given(mockRepository).findById(car.getId());
+
+        // when
+        final Optional<CarDto> retrievedCar = carService.retrieveCar(car.getId());
+
+        // then
+        assertTrue(retrievedCar.isPresent());
+
+        final CarDto carDto = retrievedCar.get();
+        assertEquals(car.getId(), carDto.getId());
+        assertEquals(car.getMake(), carDto.getMake());
+        assertEquals(car.getModel(), carDto.getModel());
+        assertEquals(car.getColour(), carDto.getColour());
+        assertEquals(car.getYear(), carDto.getYear());
+    }
+
+    @Test
+    void retrieveCar_CarNotFound_CarReturned() {
+        // given
+        final UUID id = UUID.randomUUID();
+        willReturn(Optional.empty()).given(mockRepository).findById(id);
+
+        // when
+        final Optional<CarDto> retrievedCar = carService.retrieveCar(id);
+
+        // then
+        assertTrue(retrievedCar.isEmpty());
     }
 }

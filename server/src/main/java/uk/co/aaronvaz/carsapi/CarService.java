@@ -1,5 +1,6 @@
 package uk.co.aaronvaz.carsapi;
 
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
@@ -32,6 +33,17 @@ class CarService {
 
         final Car storedCar = repository.save(car);
         return convertToDto(storedCar);
+    }
+
+    /**
+     * Search the DB for a {@link Car} with the supplied id
+     *
+     * @param id the id of the {@link Car} entity you are looking for
+     * @return Optional containing the found entity's DTO or {@link Optional#empty()} if nothing is
+     *     found
+     */
+    Optional<CarDto> retrieveCar(final UUID id) {
+        return repository.findById(id).map(CarService::convertToDto);
     }
 
     private static CarDto convertToDto(final Car car) {

@@ -1,18 +1,24 @@
 package uk.co.aaronvaz.carsapi;
 
+import java.net.URI;
+import java.util.UUID;
 import javax.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import uk.co.aaronvaz.carsapi.model.api.CarDto;
 import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
 
 @Validated
@@ -30,15 +36,28 @@ class CarRestApi {
 
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<?> add(@Valid @RequestBody final CreateOrUpdateCarRequestV1 request) {
-        service.addCar(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        final CarDto carDto = service.addCar(request);
+        final URI carLocation =
+                ServletUriComponentsBuilder.fromCurrentRequest()
+                        .path("/{id}")
+                        .buildAndExpand(carDto.getId())
+                        .toUri();
+
+        return ResponseEntity.created(carLocation).build();
+    }
+
+    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<CarDto> retrieve(@Valid @PathVariable final UUID id) {
+        return ResponseEntity.of(service.retrieveCar(id));
     }
 
     // Exception Handlers
 
-    @ExceptionHandler
-    ResponseEntity<String> handleRequestValidationErrors(
-            final MethodArgumentNotValidException exception) {
+    @ExceptionHandler({
+        MethodArgumentNotValidException.class,
+        MethodArgumentTypeMismatchException.class
+    })
+    ResponseEntity<String> handleRequestValidationErrors(final Exception exception) {
         LOGGER.debug("Error processing Cars API request", exception);
         return ResponseEntity.badRequest().body(exception.getMessage());
     }
