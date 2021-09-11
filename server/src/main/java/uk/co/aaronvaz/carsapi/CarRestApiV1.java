@@ -25,13 +25,13 @@ import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
 @Validated
 @RestController
 @RequestMapping("/api/v1/cars")
-class CarRestApi {
+class CarRestApiV1 {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CarRestApi.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(CarRestApiV1.class);
 
     private final CarService service;
 
-    CarRestApi(final CarService service) {
+    CarRestApiV1(final CarService service) {
         this.service = service;
     }
 

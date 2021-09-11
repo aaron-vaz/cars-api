@@ -8,7 +8,7 @@ public class CarDto {
 
     private final String make;
 
-    private final String model;
+    private final ModelDto model;
 
     private final String colour;
 
@@ -17,7 +17,7 @@ public class CarDto {
     public CarDto(
             final UUID id,
             final String make,
-            final String model,
+            final ModelDto model,
             final String colour,
             final int year) {
         this.id = id;
@@ -35,7 +35,7 @@ public class CarDto {
         return make;
     }
 
-    public String getModel() {
+    public ModelDto getModel() {
         return model;
     }
 
@@ -48,7 +48,7 @@ public class CarDto {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CarDto carDto = (CarDto) o;

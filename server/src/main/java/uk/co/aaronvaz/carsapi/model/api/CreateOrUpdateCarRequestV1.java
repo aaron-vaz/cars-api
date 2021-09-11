@@ -45,7 +45,7 @@ public class CreateOrUpdateCarRequestV1 {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         final CreateOrUpdateCarRequestV1 that = (CreateOrUpdateCarRequestV1) o;

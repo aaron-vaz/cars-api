@@ -2,17 +2,24 @@ package uk.co.aaronvaz.carsapi;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
+import uk.co.aaronvaz.carsapi.datamuse.DatamuseRestApi;
+import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
 import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.ModelDto;
 import uk.co.aaronvaz.carsapi.model.db.Car;
 
 @Service
 class CarService {
     private final CarRepository repository;
 
-    CarService(final CarRepository repository) {
+    private final DatamuseRestApi datamuseRestApi;
+
+    CarService(final CarRepository repository, final DatamuseRestApi datamuseRestApi) {
         this.repository = repository;
+        this.datamuseRestApi = datamuseRestApi;
     }
 
     /**
@@ -43,7 +50,7 @@ class CarService {
      *     found
      */
     Optional<CarDto> retrieveCar(final UUID id) {
-        return repository.findById(id).map(CarService::convertToDto);
+        return repository.findById(id).map(this::convertToDto);
     }
 
     /**
@@ -55,8 +62,15 @@ class CarService {
         repository.deleteById(id);
     }
 
-    private static CarDto convertToDto(final Car car) {
-        return new CarDto(
-                car.getId(), car.getMake(), car.getModel(), car.getColour(), car.getYear());
+    private CarDto convertToDto(final Car car) {
+        final String homophones =
+                datamuseRestApi.soundsLike(car.getModel()).stream()
+                        .map(SoundsLikeResponseV1::getWord)
+                        .limit(5)
+                        .collect(Collectors.joining(", "));
+
+        final ModelDto modelDto = new ModelDto(car.getModel(), homophones);
+
+        return new CarDto(car.getId(), car.getMake(), modelDto, car.getColour(), car.getYear());
     }
 }

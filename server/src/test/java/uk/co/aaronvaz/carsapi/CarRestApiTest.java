@@ -26,8 +26,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
+import uk.co.aaronvaz.carsapi.model.api.ModelDto;
 
-@WebMvcTest(CarRestApi.class)
+@WebMvcTest(CarRestApiV1.class)
 class CarRestApiTest {
 
     @Autowired private MockMvc mockMvc;
@@ -39,7 +40,8 @@ class CarRestApiTest {
     @Test
     void add_HappyPath_201Created() throws Exception {
         // given
-        final CarDto carDto = new CarDto(UUID.randomUUID(), "Ford", "Focus", "Blue", 2010);
+        final CarDto carDto =
+                new CarDto(UUID.randomUUID(), "Ford", new ModelDto("Focus", ""), "Blue", 2010);
         willReturn(carDto).given(mockCarService).addCar(any());
 
         final String request =
@@ -112,7 +114,8 @@ class CarRestApiTest {
     @Test
     void retrieve_HappyPath_200Ok() throws Exception {
         // given
-        final CarDto carDto = new CarDto(UUID.randomUUID(), "Nissan", "Micra", "Blue", 2012);
+        final CarDto carDto =
+                new CarDto(UUID.randomUUID(), "Nissan", new ModelDto("Micra", ""), "Blue", 2012);
         willReturn(Optional.of(carDto)).given(mockCarService).retrieveCar(carDto.getId());
 
         // when
