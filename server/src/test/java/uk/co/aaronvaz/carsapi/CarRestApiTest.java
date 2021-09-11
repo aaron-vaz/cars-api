@@ -53,7 +53,7 @@ class CarRestApiTest {
         // when
         final ResultActions actions =
                 mockMvc.perform(
-                        post("/api/v1/car")
+                        post("/api/v1/cars")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request));
 
@@ -62,7 +62,7 @@ class CarRestApiTest {
         final String locationHeader = mvcResult.getResponse().getHeader(HttpHeaders.LOCATION);
 
         assertNotNull(locationHeader);
-        assertTrue(locationHeader.endsWith("/api/v1/car/" + carDto.getId()));
+        assertTrue(locationHeader.endsWith("/api/v1/cars/" + carDto.getId()));
 
         verify(mockCarService).addCar(any());
     }
@@ -75,7 +75,7 @@ class CarRestApiTest {
         // when
         final ResultActions actions =
                 mockMvc.perform(
-                        post("/api/v1/car")
+                        post("/api/v1/cars")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request));
 
@@ -101,7 +101,7 @@ class CarRestApiTest {
         // when
         final ResultActions actions =
                 mockMvc.perform(
-                        post("/api/v1/car")
+                        post("/api/v1/cars")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request));
 
@@ -118,7 +118,8 @@ class CarRestApiTest {
         // when
         final ResultActions resultActions =
                 mockMvc.perform(
-                        get("/api/v1/car/{id}", carDto.getId()).accept(MediaType.APPLICATION_JSON));
+                        get("/api/v1/cars/{id}", carDto.getId())
+                                .accept(MediaType.APPLICATION_JSON));
 
         // then
         resultActions
@@ -134,7 +135,7 @@ class CarRestApiTest {
 
         // when
         final ResultActions resultActions =
-                mockMvc.perform(get("/api/v1/car/{id}", id).accept(MediaType.APPLICATION_JSON));
+                mockMvc.perform(get("/api/v1/cars/{id}", id).accept(MediaType.APPLICATION_JSON));
 
         // then
         resultActions.andExpect(status().isNotFound());
@@ -148,7 +149,7 @@ class CarRestApiTest {
         // when
         final ResultActions resultActions =
                 mockMvc.perform(
-                        get("/api/v1/car/{id}", invalidId).accept(MediaType.APPLICATION_JSON));
+                        get("/api/v1/cars/{id}", invalidId).accept(MediaType.APPLICATION_JSON));
 
         // then
         resultActions.andExpect(status().isBadRequest());
@@ -164,7 +165,7 @@ class CarRestApiTest {
 
         // when
         final ResultActions resultActions =
-                mockMvc.perform(get("/api/v1/car/{id}", id).accept(MediaType.APPLICATION_JSON));
+                mockMvc.perform(get("/api/v1/cars/{id}", id).accept(MediaType.APPLICATION_JSON));
 
         // then
         resultActions.andExpect(status().isInternalServerError());
@@ -176,7 +177,7 @@ class CarRestApiTest {
         final UUID id = UUID.randomUUID();
 
         // when
-        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", id));
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/cars/{id}", id));
 
         // then
         resultActions.andExpect(status().isOk());
@@ -190,7 +191,7 @@ class CarRestApiTest {
         final String invalidId = "invalid";
 
         // when
-        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", invalidId));
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/cars/{id}", invalidId));
 
         // then
         resultActions.andExpect(status().isBadRequest());
@@ -205,7 +206,7 @@ class CarRestApiTest {
         willThrow(RuntimeException.class).given(mockCarService).deleteCar(id);
 
         // when
-        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/car/{id}", id));
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/cars/{id}", id));
 
         // then
         resultActions.andExpect(status().isInternalServerError());

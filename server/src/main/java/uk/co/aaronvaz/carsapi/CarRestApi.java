@@ -24,7 +24,7 @@ import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
 
 @Validated
 @RestController
-@RequestMapping("/api/v1/car")
+@RequestMapping("/api/v1/cars")
 class CarRestApi {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CarRestApi.class);
