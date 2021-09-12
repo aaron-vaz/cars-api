@@ -257,6 +257,6 @@ The above task with build the jar inside the container, so it might take a while
 the image we simply do:
 
 ```shell
-docker run -it <image name>
+docker run -p 8080:8080 -it <image name>
 ```
 

@@ -31,7 +31,7 @@ java {
 }
 
 tasks {
-    jar {
+    bootJar {
         archiveFileName.set("server.jar")
     }
 
