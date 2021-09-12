@@ -2,18 +2,22 @@ package uk.co.aaronvaz.carsapi.model.db;
 
 import java.util.Objects;
 import java.util.UUID;
-import org.springframework.data.annotation.Id;
+import javax.persistence.Entity;
+import javax.persistence.Id;
 
+@Entity
 public class Car {
-    @Id private final UUID id;
+    @Id private UUID id;
 
-    private final String make;
+    private String make;
 
-    private final String model;
+    private String model;
 
-    private final String colour;
+    private String colour;
 
-    private final int year;
+    private int year;
+
+    public Car() {}
 
     public Car(
             final UUID id,
@@ -32,20 +36,40 @@ public class Car {
         return id;
     }
 
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
     public String getMake() {
         return make;
+    }
+
+    public void setMake(String make) {
+        this.make = make;
     }
 
     public String getModel() {
         return model;
     }
 
+    public void setModel(String model) {
+        this.model = model;
+    }
+
     public String getColour() {
         return colour;
     }
 
+    public void setColour(String colour) {
+        this.colour = colour;
+    }
+
     public int getYear() {
         return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
     }
 
     @Override

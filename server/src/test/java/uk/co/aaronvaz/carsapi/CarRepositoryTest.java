@@ -1,22 +1,23 @@
 package uk.co.aaronvaz.carsapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 import java.util.UUID;
+import javax.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.keyvalue.core.KeyValueTemplate;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import uk.co.aaronvaz.carsapi.model.db.Car;
 
-@SpringBootTest
+@DataJpaTest
 class CarRepositoryTest {
 
     @Autowired private CarRepository carRepository;
 
-    @Autowired private KeyValueTemplate keyValueTemplate;
+    @Autowired private EntityManager entityManager;
 
     @Test
     void save_HappyPath_EntitySaved() {
@@ -29,16 +30,15 @@ class CarRepositoryTest {
         // then
         assertEquals(car, storedCar);
 
-        final Optional<Car> dbCar = keyValueTemplate.findById(car.getId(), Car.class);
-        assertTrue(dbCar.isPresent());
-        assertEquals(car, dbCar.get());
+        final Car dbCar = entityManager.find(Car.class, car.getId());
+        assertEquals(car, dbCar);
     }
 
     @Test
     void findById_HappyPath_EntityReturned() {
         // given
         final Car car = new Car(UUID.randomUUID(), "Audi", "R8", "Silver", 2010);
-        keyValueTemplate.insert(car);
+        entityManager.persist(car);
 
         // when
         final Optional<Car> storedCar = carRepository.findById(car.getId());
@@ -64,13 +64,13 @@ class CarRepositoryTest {
     void deleteById_HappyPath_EntityDeleted() {
         // given
         final Car car = new Car(UUID.randomUUID(), "Seat", "Ibiza", "Black", 2020);
-        keyValueTemplate.insert(car);
+        entityManager.persist(car);
 
         // when
         carRepository.deleteById(car.getId());
 
         // then
-        final Optional<Car> dbCar = keyValueTemplate.findById(car.getId(), Car.class);
-        assertTrue(dbCar.isEmpty());
+        final Car dbCar = entityManager.find(Car.class, car.getId());
+        assertNull(dbCar);
     }
 }
