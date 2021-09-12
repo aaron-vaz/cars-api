@@ -1,6 +1,7 @@
 package uk.co.aaronvaz.carsapi;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.UUID;
 import javax.validation.Valid;
 import org.slf4j.Logger;
@@ -39,6 +40,33 @@ class CarRestApiV1 {
         this.service = service;
     }
 
+    /**
+     * Add a Car
+     *
+     * <p>Request:
+     *
+     * <pre>
+     *     POST /api/v1/cars
+     *     Content-Type: application/json
+     *
+     *     {
+     *      "make": "Ford",
+     *      "model": "Focus",
+     *      "colour": "Blue",
+     *      "year": 2010
+     *     }
+     * </pre>
+     *
+     * <p>Response:
+     *
+     * <pre>
+     *     HTTP 201 Created
+     *     Location: /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     * </pre>
+     *
+     * @param request the request body
+     * @return 201 if the Car was successfully created
+     */
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<?> add(@Valid @RequestBody final CreateCarRequestV1 request) {
         final CarDto carDto = service.addCar(request);
@@ -51,6 +79,49 @@ class CarRestApiV1 {
         return ResponseEntity.created(carLocation).build();
     }
 
+    /**
+     * Update an existing Car
+     *
+     * <p>Full update Request:
+     *
+     * <pre>
+     *     PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     *     Content-Type: application/json
+     *
+     *     {
+     *      "make": "Ford",
+     *      "model": "Focus",
+     *      "colour": "Blue",
+     *      "year": 2010
+     *     }
+     * </pre>
+     *
+     * <p>Partial update Request:
+     *
+     * <pre>
+     *     PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     *     Content-Type: application/json
+     *
+     *     {
+     *      "make": "Ford"
+     *     }
+     * </pre>
+     *
+     * <p>Response if successfully updated:
+     *
+     * <pre>
+     *     HTTP 204 No Content
+     * </pre>
+     *
+     * <p>Response if Car was not found:
+     *
+     * <pre>
+     *     HTTP 404 Not Found
+     * </pre>
+     *
+     * @param request the update request body
+     * @return 204 if the Car was successfully updated or 404 if car was not found
+     */
     @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<?> update(
             @PathVariable final UUID id, @RequestBody final UpdateCarRequestV1 request)
@@ -59,14 +130,161 @@ class CarRestApiV1 {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * Retrieve a Car
+     *
+     * <p>Request:
+     *
+     * <pre>
+     *     GET /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     *     Accept: application/json
+     * </pre>
+     *
+     * <p>Response if successful:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     *     Content-Type: application/json
+     *
+     *     {
+     *      "make": "Ford",
+     *      "model": {
+     *          "name": "Focus",
+     *          "homophones": "focus, fokus, phocus, ficus, focas"
+     *      },
+     *      "colour": "Blue",
+     *      "year": 2010
+     *     }
+     * </pre>
+     *
+     * <p>Response if car was not found:
+     *
+     * <pre>
+     *     HTTP 404 Not Found
+     * </pre>
+     *
+     * @param id the id of the stored car
+     * @return 200 with the Car properties in json or 404 if car doesn't exist
+     */
     @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     ResponseEntity<CarDto> retrieve(@PathVariable final UUID id) {
         return ResponseEntity.of(service.retrieveCar(id));
     }
 
+    /**
+     * Delete a Car
+     *
+     * <p>Request:
+     *
+     * <pre>
+     *     DELETE /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     * </pre>
+     *
+     * <p>Response if successful:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     * </pre>
+     *
+     * @param id the id of the stored car
+     */
     @DeleteMapping("/{id}")
     void delete(@PathVariable final UUID id) {
         service.deleteCar(id);
+    }
+
+    /**
+     * Retrieve a Car by make
+     *
+     * <p>Request:
+     *
+     * <pre>
+     *     GET /api/v1/cars/make/Ford
+     *     Accept: application/json
+     * </pre>
+     *
+     * <p>Response if successful:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     *     Content-Type: application/json
+     *
+     *     [
+     *      {
+     *          "make": "Ford",
+     *          "model": {
+     *              "name": "Focus",
+     *              "homophones": "focus, fokus, phocus, ficus, focas"
+     *          },
+     *          "colour": "Blue",
+     *          "year": 2010
+     *      }
+     *     ]
+     * </pre>
+     *
+     * <p>Response if no matches were not found:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     *     Content-type: application/json
+     *
+     *     []
+     * </pre>
+     *
+     * @param make the make of the Car to search for
+     * @return 200 and json array with cars or 200 with empty json array
+     */
+    @GetMapping(value = "/make/{make}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Collection<CarDto>> retrieveByMake(@PathVariable final String make) {
+        return ResponseEntity.ok(service.findCarsByMake(make));
+    }
+
+    /**
+     * Retrieve a Car by make & model
+     *
+     * <p>Request:
+     *
+     * <pre>
+     *     GET /api/v1/cars/make/Ford/model/Focus
+     *     Accept: application/json
+     * </pre>
+     *
+     * <p>Response if successful:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     *     Content-Type: application/json
+     *
+     *     [
+     *      {
+     *          "make": "Ford",
+     *          "model": {
+     *              "name": "Focus",
+     *              "homophones": "focus, fokus, phocus, ficus, focas"
+     *          },
+     *          "colour": "Blue",
+     *          "year": 2010
+     *      }
+     *     ]
+     * </pre>
+     *
+     * <p>Response if no matches were not found:
+     *
+     * <pre>
+     *     HTTP 200 OK
+     *     Content-type: application/json
+     *
+     *     []
+     * </pre>
+     *
+     * @param make the make of the Car to search for
+     * @param model the model of the car to search for
+     * @return 200 and json array with cars or 200 with empty json array
+     */
+    @GetMapping(value = "/make/{make}/model/{model}", produces = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<Collection<CarDto>> retrieveByMakeAndModel(
+            @PathVariable final String make, @PathVariable final String model) {
+        return ResponseEntity.ok(service.findCarsByMakeAndModel(make, model));
     }
 
     // Exception Handlers

@@ -1,9 +1,12 @@
 package uk.co.aaronvaz.carsapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import javax.persistence.EntityManager;
@@ -72,5 +75,35 @@ class CarRepositoryTest {
         // then
         final Car dbCar = entityManager.find(Car.class, car.getId());
         assertNull(dbCar);
+    }
+
+    @Test
+    void findByMake_HappyPath_EntityFound() {
+        // given
+        final Car seat = new Car(UUID.randomUUID(), "Seat", "Ibiza", "Black", 2020);
+        final Car ford = new Car(UUID.randomUUID(), "Ford", "Fiesta", "Black", 2020);
+        entityManager.persist(seat);
+        entityManager.persist(ford);
+
+        // when
+        final Collection<Car> carsByMake = carRepository.findByMake("Ford");
+
+        // then
+        assertIterableEquals(List.of(ford), carsByMake);
+    }
+
+    @Test
+    void findByMakeAAndModel_HappyPath_EntityFound() {
+        // given
+        final Car ibiza = new Car(UUID.randomUUID(), "Seat", "Ibiza", "Black", 2020);
+        final Car leon = new Car(UUID.randomUUID(), "Seat", "Leon", "Black", 2020);
+        entityManager.persist(ibiza);
+        entityManager.persist(leon);
+
+        // when
+        final Collection<Car> carsByMake = carRepository.findByMakeAAndModel("Seat", "Leon");
+
+        // then
+        assertIterableEquals(List.of(leon), carsByMake);
     }
 }

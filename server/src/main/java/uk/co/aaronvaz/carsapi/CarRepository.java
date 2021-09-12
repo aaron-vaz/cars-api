@@ -1,7 +1,10 @@
 package uk.co.aaronvaz.carsapi;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uk.co.aaronvaz.carsapi.model.db.Car;
 
@@ -31,4 +34,23 @@ interface CarRepository extends org.springframework.data.repository.Repository<C
      * @param id the id to delete the entity by
      */
     void deleteById(UUID id);
+
+    /**
+     * Find all {@link Car} entities in the database that have the provided make
+     *
+     * @param make the make of the car to search for
+     * @return {@link Car} entities that contain the supplied make
+     */
+    @Query("select c from Car c where c.make = :make")
+    Collection<Car> findByMake(@Param("make") String make);
+
+    /**
+     * Find all {@link Car} entities in the database that have the provided make & model
+     *
+     * @param make the make of the car to search for
+     * @param model the model to search for
+     * @return {@link Car} entities that contain the supplied make & model
+     */
+    @Query("select c from Car c where c.make = :make and c.model = :model")
+    Collection<Car> findByMakeAAndModel(@Param("make") String make, @Param("model") String model);
 }

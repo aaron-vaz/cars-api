@@ -1,5 +1,6 @@
 package uk.co.aaronvaz.carsapi;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -80,6 +81,31 @@ class CarService {
      */
     void deleteCar(final UUID id) {
         repository.deleteById(id);
+    }
+
+    /**
+     * Find {@link Car} entities in the DB who match the supplied make
+     *
+     * @param make the make to search for
+     * @return Collection of {@link CarDto} from matching {@link Car} entities
+     */
+    Collection<CarDto> findCarsByMake(final String make) {
+        return repository.findByMake(make).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
+    /**
+     * Find {@link Car} entities in the DB who match the supplied make & model
+     *
+     * @param make the make to search for
+     * @param model the model to search for
+     * @return Collection of {@link CarDto} from matching {@link Car} entities
+     */
+    Collection<CarDto> findCarsByMakeAndModel(final String make, final String model) {
+        return repository.findByMakeAAndModel(make, model).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toUnmodifiableList());
     }
 
     private CarDto convertToDto(final Car car) {

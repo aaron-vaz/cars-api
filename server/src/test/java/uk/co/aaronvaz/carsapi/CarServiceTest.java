@@ -1,6 +1,7 @@
 package uk.co.aaronvaz.carsapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -208,5 +209,90 @@ class CarServiceTest {
 
         // then
         verify(mockRepository).deleteById(id);
+    }
+
+    @Test
+    void findCarsByMake_HappyPath_CarsReturned() {
+        // given
+        final Car car = new Car(UUID.randomUUID(), "Hyundai", "i20", "Red", 2004);
+        willReturn(List.of(car)).given(mockRepository).findByMake(car.getMake());
+
+        final Collection<SoundsLikeResponseV1> homophones =
+                List.of(
+                        new SoundsLikeResponseV1("eh", 95, 1),
+                        new SoundsLikeResponseV1("uhh", 95, 1));
+        willReturn(homophones).given(mockDatamuseRestApi).soundsLike(car.getModel());
+
+        // when
+        final Collection<CarDto> carsByMake = carService.findCarsByMake(car.getMake());
+
+        // then
+        final CarDto carDto =
+                new CarDto(
+                        car.getId(),
+                        car.getMake(),
+                        new ModelDto(car.getModel(), "eh, uhh"),
+                        car.getColour(),
+                        car.getYear());
+
+        assertIterableEquals(List.of(carDto), carsByMake);
+    }
+
+    @Test
+    void findCarsByMake_NoCarsFound_EmptyCollectionReturned() {
+        // given
+        final String make = "Ford";
+        willReturn(List.of()).given(mockRepository).findByMake(make);
+
+        // when
+        final Collection<CarDto> carsByMake = carService.findCarsByMake(make);
+
+        // then
+        assertIterableEquals(List.of(), carsByMake);
+    }
+
+    @Test
+    void findCarsByMakeAndModel_HappyPath_CarsReturned() {
+        // given
+        final Car car = new Car(UUID.randomUUID(), "Hyundai", "i20", "Red", 2004);
+        willReturn(List.of(car))
+                .given(mockRepository)
+                .findByMakeAAndModel(car.getMake(), car.getModel());
+
+        final Collection<SoundsLikeResponseV1> homophones =
+                List.of(
+                        new SoundsLikeResponseV1("eh", 95, 1),
+                        new SoundsLikeResponseV1("uhh", 95, 1));
+        willReturn(homophones).given(mockDatamuseRestApi).soundsLike(car.getModel());
+
+        // when
+        final Collection<CarDto> carsByMake =
+                carService.findCarsByMakeAndModel(car.getMake(), car.getModel());
+
+        // then
+        final CarDto carDto =
+                new CarDto(
+                        car.getId(),
+                        car.getMake(),
+                        new ModelDto(car.getModel(), "eh, uhh"),
+                        car.getColour(),
+                        car.getYear());
+
+        assertIterableEquals(List.of(carDto), carsByMake);
+    }
+
+    @Test
+    void findCarsByMakeAndModel_NoCarsFound_EmptyCollectionReturned() {
+        // given
+        final String make = "Ford";
+        final String model = "Fiesta";
+
+        willReturn(List.of()).given(mockRepository).findByMakeAAndModel(make, model);
+
+        // when
+        final Collection<CarDto> carsByMake = carService.findCarsByMakeAndModel(make, model);
+
+        // then
+        assertIterableEquals(List.of(), carsByMake);
     }
 }

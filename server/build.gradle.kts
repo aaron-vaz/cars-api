@@ -6,7 +6,7 @@ plugins {
     id("com.google.cloud.tools.jib").version("3.1.4")
 }
 
-version = "0.0.1-SNAPSHOT"
+version = "0.0.1"
 
 repositories {
     maven("https://maven-central-eu.storage-download.googleapis.com/maven2/")
@@ -31,6 +31,10 @@ java {
 }
 
 tasks {
+    jar {
+        archiveFileName.set("server.jar")
+    }
+
     test {
         useJUnitPlatform()
     }

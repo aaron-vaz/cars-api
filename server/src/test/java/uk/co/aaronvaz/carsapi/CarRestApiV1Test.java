@@ -16,6 +16,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ import uk.co.aaronvaz.carsapi.model.api.ModelDto;
 import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
 
 @WebMvcTest(CarRestApiV1.class)
-class CarRestApiTest {
+class CarRestApiV1Test {
 
     @Autowired private MockMvc mockMvc;
 
@@ -213,6 +214,7 @@ class CarRestApiTest {
         // then
         resultActions
                 .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(objectMapper.writeValueAsString(carDto)));
     }
 
@@ -296,6 +298,121 @@ class CarRestApiTest {
 
         // when
         final ResultActions resultActions = mockMvc.perform(delete("/api/v1/cars/{id}", id));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void retrieveByMake_HappyPath_200Ok() throws Exception {
+        // given
+        final CarDto carDto =
+                new CarDto(UUID.randomUUID(), "Nissan", new ModelDto("Juke", ""), "Blue", 2012);
+        willReturn(List.of(carDto)).given(mockCarService).findCarsByMake(carDto.getMake());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get("/api/v1/cars/make/{make}", carDto.getMake())
+                                .accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(objectMapper.writeValueAsString(List.of(carDto))));
+    }
+
+    @Test
+    void retrieveByMake_NoMatches_200OkWithEmptyArrayJson() throws Exception {
+        // given
+        final String make = "Aston Martin";
+        willReturn(List.of()).given(mockCarService).findCarsByMake(make);
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get("/api/v1/cars/make/{make}", make).accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
+    void retrieveByMake_UncheckedError_500OkServerError() throws Exception {
+        // given
+        final String make = "Volvo";
+        willThrow(RuntimeException.class).given(mockCarService).findCarsByMake(make);
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get("/api/v1/cars/make/{make}", make).accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
+    }
+
+    @Test
+    void retrieveByMakeAndModel_HappyPath_200Ok() throws Exception {
+        // given
+        final CarDto carDto =
+                new CarDto(UUID.randomUUID(), "VW", new ModelDto("Golf", ""), "Blue", 2012);
+        willReturn(List.of(carDto))
+                .given(mockCarService)
+                .findCarsByMakeAndModel(carDto.getMake(), carDto.getModel().getModel());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get(
+                                        "/api/v1/cars/make/{make}/model/{model}",
+                                        carDto.getMake(),
+                                        carDto.getModel().getModel())
+                                .accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(objectMapper.writeValueAsString(List.of(carDto))));
+    }
+
+    @Test
+    void retrieveByMakeAndModel_NoMatches_200OkWithEmptyArrayJson() throws Exception {
+        // given
+        final String make = "VW";
+        final String model = "Polo";
+        willReturn(List.of()).given(mockCarService).findCarsByMakeAndModel(make, model);
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get("/api/v1/cars/make/{make}/model/{model}", make, model)
+                                .accept(MediaType.APPLICATION_JSON));
+
+        // then
+        resultActions
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
+    void retrieveByMakeAndModel_UncheckedError_500OkServerError() throws Exception {
+        // given
+        final String make = "Kia";
+        final String model = "Rio";
+        willThrow(RuntimeException.class).given(mockCarService).findCarsByMakeAndModel(make, model);
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        get("/api/v1/cars/make/{make}/model/{model}", make, model)
+                                .accept(MediaType.APPLICATION_JSON));
 
         // then
         resultActions.andExpect(status().isInternalServerError());

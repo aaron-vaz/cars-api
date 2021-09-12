@@ -36,7 +36,7 @@ public class Car {
         return id;
     }
 
-    public void setId(UUID id) {
+    public void setId(final UUID id) {
         this.id = id;
     }
 
@@ -44,7 +44,7 @@ public class Car {
         return make;
     }
 
-    public void setMake(String make) {
+    public void setMake(final String make) {
         this.make = make;
     }
 
@@ -52,7 +52,7 @@ public class Car {
         return model;
     }
 
-    public void setModel(String model) {
+    public void setModel(final String model) {
         this.model = model;
     }
 
@@ -60,7 +60,7 @@ public class Car {
         return colour;
     }
 
-    public void setColour(String colour) {
+    public void setColour(final String colour) {
         this.colour = colour;
     }
 
@@ -68,7 +68,7 @@ public class Car {
         return year;
     }
 
-    public void setYear(int year) {
+    public void setYear(final int year) {
         this.year = year;
     }
 
