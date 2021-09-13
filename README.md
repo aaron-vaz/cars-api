@@ -35,10 +35,42 @@ Update an existing car
 
 #### Request
 
+```http
+PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+Content-Type: application/json
+
+{
+    "make": "Ford",
+    "model": "Focus",
+    "colour": "Blue",
+    "year": 2010
+}
+```
+
+#### Response
+
+##### Successful
+
+```http
+HTTP 204 No Content
+```
+
+##### Car not found but was created
+
+```http
+ HTTP 201 Created
+```
+
+### Partial Update
+
+Update an existing car, Allow partial updates
+
+#### Request
+
 ##### Full update
 
 ```http
-PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+PATCH /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
 Content-Type: application/json
 
 {
@@ -52,7 +84,7 @@ Content-Type: application/json
 ##### Partial update
 
 ```http
-PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+PATCH /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
 Content-Type: application/json
 
 {

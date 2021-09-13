@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -24,8 +25,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
-import uk.co.aaronvaz.carsapi.model.api.CreateCarRequestV1;
-import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.PartialUpdateCarRequestV1;
 
 @Validated
 @RestController
@@ -68,13 +69,9 @@ class CarRestApiV1 {
      * @return 201 if the Car was successfully created
      */
     @PostMapping(value = "", consumes = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<?> add(@Valid @RequestBody final CreateCarRequestV1 request) {
+    ResponseEntity<?> add(@Valid @RequestBody final CreateOrUpdateCarRequestV1 request) {
         final CarDto carDto = service.addCar(request);
-        final URI carLocation =
-                ServletUriComponentsBuilder.fromCurrentRequest()
-                        .path("/{id}")
-                        .buildAndExpand(carDto.getId())
-                        .toUri();
+        final URI carLocation = retrieveCarUri(carDto.getId());
 
         return ResponseEntity.created(carLocation).build();
     }
@@ -82,7 +79,7 @@ class CarRestApiV1 {
     /**
      * Update an existing Car
      *
-     * <p>Full update Request:
+     * <p>Request:
      *
      * <pre>
      *     PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
@@ -96,10 +93,53 @@ class CarRestApiV1 {
      *     }
      * </pre>
      *
+     * <p>Response if successfully updated:
+     *
+     * <pre>
+     *     HTTP 204 No Content
+     * </pre>
+     *
+     * <p>Response if Car was not found and so was created:
+     *
+     * <pre>
+     *     HTTP 201 Created
+     *     Location: /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     * </pre>
+     *
+     * @param request the update request body
+     * @return 204 if the Car was successfully updated or 201 if the car was not found and created
+     */
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<?> update(
+            @PathVariable final UUID id,
+            @Valid @RequestBody final CreateOrUpdateCarRequestV1 request) {
+        final boolean created = service.updateCar(id, request);
+        return created
+                ? ResponseEntity.created(retrieveCarUri(id)).build()
+                : ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Update an existing Car. Also allows partial updates
+     *
+     * <p>Full update Request:
+     *
+     * <pre>
+     *     PATCH /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     *     Content-Type: application/json
+     *
+     *     {
+     *      "make": "Ford",
+     *      "model": "Focus",
+     *      "colour": "Blue",
+     *      "year": 2010
+     *     }
+     * </pre>
+     *
      * <p>Partial update Request:
      *
      * <pre>
-     *     PUT /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
+     *     PATCH /api/v1/cars/8a5fea9c-43ff-44d3-a334-e1eca5f209fb
      *     Content-Type: application/json
      *
      *     {
@@ -122,11 +162,11 @@ class CarRestApiV1 {
      * @param request the update request body
      * @return 204 if the Car was successfully updated or 404 if car was not found
      */
-    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    ResponseEntity<?> update(
-            @PathVariable final UUID id, @RequestBody final UpdateCarRequestV1 request)
+    @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    ResponseEntity<?> partialUpdate(
+            @PathVariable final UUID id, @RequestBody final PartialUpdateCarRequestV1 request)
             throws CarNotFoundException {
-        service.updateCar(id, request);
+        service.partialUpdateCar(id, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -285,6 +325,13 @@ class CarRestApiV1 {
     ResponseEntity<Collection<CarDto>> retrieveByMakeAndModel(
             @PathVariable final String make, @PathVariable final String model) {
         return ResponseEntity.ok(service.findCarsByMakeAndModel(make, model));
+    }
+
+    private URI retrieveCarUri(final UUID id) {
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/api/v1/cars/{id}")
+                .buildAndExpand(id)
+                .toUri();
     }
 
     // Exception Handlers

@@ -1,6 +1,7 @@
 package uk.co.aaronvaz.carsapi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertIterableEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -23,9 +24,9 @@ import org.mockito.ArgumentCaptor;
 import uk.co.aaronvaz.carsapi.datamuse.DatamuseRestApi;
 import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
-import uk.co.aaronvaz.carsapi.model.api.CreateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.CreateOrUpdateCarRequestV1;
 import uk.co.aaronvaz.carsapi.model.api.ModelDto;
-import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.PartialUpdateCarRequestV1;
 import uk.co.aaronvaz.carsapi.model.db.Car;
 
 class CarServiceTest {
@@ -41,7 +42,8 @@ class CarServiceTest {
         // given
         willAnswer(invocation -> invocation.getArgument(0)).given(mockRepository).save(any());
 
-        final CreateCarRequestV1 request = new CreateCarRequestV1("BMW", "i8", "Silver", 2015);
+        final CreateOrUpdateCarRequestV1 request =
+                new CreateOrUpdateCarRequestV1("BMW", "i8", "Silver", 2015);
 
         final Collection<SoundsLikeResponseV1> homophones =
                 List.of(
@@ -73,24 +75,24 @@ class CarServiceTest {
     }
 
     @Test
-    void updateCar_HappyPath_CarUpdated() throws CarNotFoundException {
+    void updateCar_HappyPath_CarUpdated() {
         // given
         final Car car = new Car(UUID.randomUUID(), "Hyundai", "i10", "Red", 2004);
         willReturn(Optional.of(car)).given(mockRepository).findById(car.getId());
 
-        final UpdateCarRequestV1 updateCarRequest =
-                new UpdateCarRequestV1("Hyundai", "i30", "Black", 2010);
+        final CreateOrUpdateCarRequestV1 updateCarRequest =
+                new CreateOrUpdateCarRequestV1("Hyundai", "i30", "Black", 2010);
 
         // when
-        carService.updateCar(car.getId(), updateCarRequest);
+        final boolean created = carService.updateCar(car.getId(), updateCarRequest);
 
         // then
+        assertFalse(created);
+
         final ArgumentCaptor<Car> carCaptor = ArgumentCaptor.forClass(Car.class);
         verify(mockRepository).save(carCaptor.capture());
 
         final Car updatedCar = carCaptor.getValue();
-        assertNotEquals(car, updatedCar);
-
         assertEquals(car.getId(), updatedCar.getId());
         assertEquals(updateCarRequest.getMake(), updatedCar.getMake());
         assertEquals(updateCarRequest.getModel(), updatedCar.getModel());
@@ -99,16 +101,43 @@ class CarServiceTest {
     }
 
     @Test
-    void updateCar_PartialUpdate_CarUpdated() throws CarNotFoundException {
+    void updateCar_CarDoesntExist_CarCreated() {
+        // given
+        final UUID id = UUID.randomUUID();
+        willReturn(Optional.empty()).given(mockRepository).findById(id);
+
+        final CreateOrUpdateCarRequestV1 updateCarRequest =
+                new CreateOrUpdateCarRequestV1("Hyundai", "i30", "Black", 2010);
+
+        // when
+        final boolean created = carService.updateCar(id, updateCarRequest);
+
+        // then
+        assertTrue(created);
+
+        final ArgumentCaptor<Car> carCaptor = ArgumentCaptor.forClass(Car.class);
+        verify(mockRepository).save(carCaptor.capture());
+
+        final Car updatedCar = carCaptor.getValue();
+
+        assertEquals(id, updatedCar.getId());
+        assertEquals(updateCarRequest.getMake(), updatedCar.getMake());
+        assertEquals(updateCarRequest.getModel(), updatedCar.getModel());
+        assertEquals(updateCarRequest.getColour(), updatedCar.getColour());
+        assertEquals(updateCarRequest.getYear(), updatedCar.getYear());
+    }
+
+    @Test
+    void partialUpdateCar_PartialUpdate_CarUpdated() throws CarNotFoundException {
         // given
         final Car car = new Car(UUID.randomUUID(), "Seat", "Ibiza", "Red", 2010);
         willReturn(Optional.of(car)).given(mockRepository).findById(car.getId());
 
-        final UpdateCarRequestV1 updateCarRequest =
-                new UpdateCarRequestV1(null, "Leon", null, null);
+        final PartialUpdateCarRequestV1 updateCarRequest =
+                new PartialUpdateCarRequestV1(null, "Leon", null, null);
 
         // when
-        carService.updateCar(car.getId(), updateCarRequest);
+        carService.partialUpdateCar(car.getId(), updateCarRequest);
 
         // then
         final ArgumentCaptor<Car> carCaptor = ArgumentCaptor.forClass(Car.class);
@@ -126,33 +155,33 @@ class CarServiceTest {
     }
 
     @Test
-    void updateCar_SamePropsSubmitted_CarNotUpdated() throws CarNotFoundException {
+    void partialUpdateCar_SamePropsSubmitted_CarNotUpdated() throws CarNotFoundException {
         // given
         final Car car = new Car(UUID.randomUUID(), "Seat", "Ibiza", "Red", 2010);
         willReturn(Optional.of(car)).given(mockRepository).findById(car.getId());
 
-        final UpdateCarRequestV1 updateCarRequest =
-                new UpdateCarRequestV1(
+        final PartialUpdateCarRequestV1 updateCarRequest =
+                new PartialUpdateCarRequestV1(
                         car.getMake(), car.getModel(), car.getColour(), car.getYear());
 
         // when
-        carService.updateCar(car.getId(), updateCarRequest);
+        carService.partialUpdateCar(car.getId(), updateCarRequest);
 
         // then
         verify(mockRepository, never()).save(any());
     }
 
     @Test
-    void updateCar_CarNotFound_ExceptionThrown() {
+    void partialUpdateCar_CarNotFound_ExceptionThrown() {
         // given
         final UUID id = UUID.randomUUID();
         willReturn(Optional.empty()).given(mockRepository).findById(id);
 
-        final UpdateCarRequestV1 updateCarRequest =
-                new UpdateCarRequestV1("Hyundai", "i30", "Black", 2010);
+        final PartialUpdateCarRequestV1 updateCarRequest =
+                new PartialUpdateCarRequestV1("Hyundai", "i30", "Black", 2010);
 
         // when
-        final Executable updateCar = () -> carService.updateCar(id, updateCarRequest);
+        final Executable updateCar = () -> carService.partialUpdateCar(id, updateCarRequest);
 
         // then
         assertThrows(CarNotFoundException.class, updateCar);

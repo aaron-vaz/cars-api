@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 import org.springframework.lang.Nullable;
 
-public class UpdateCarRequestV1 {
+public class PartialUpdateCarRequestV1 {
 
     private final String make;
 
@@ -16,7 +16,7 @@ public class UpdateCarRequestV1 {
     private final Integer year;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public UpdateCarRequestV1(
+    public PartialUpdateCarRequestV1(
             @JsonProperty("make") final String make,
             @JsonProperty("model") final String model,
             @JsonProperty("colour") final String colour,
@@ -51,7 +51,7 @@ public class UpdateCarRequestV1 {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final UpdateCarRequestV1 that = (UpdateCarRequestV1) o;
+        final PartialUpdateCarRequestV1 that = (PartialUpdateCarRequestV1) o;
         return Objects.equals(make, that.make)
                 && Objects.equals(model, that.model)
                 && Objects.equals(colour, that.colour)

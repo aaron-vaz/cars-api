@@ -6,7 +6,7 @@ import java.util.Objects;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Positive;
 
-public class CreateCarRequestV1 {
+public class CreateOrUpdateCarRequestV1 {
 
     @NotBlank private final String make;
 
@@ -17,7 +17,7 @@ public class CreateCarRequestV1 {
     @Positive private final int year;
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public CreateCarRequestV1(
+    public CreateOrUpdateCarRequestV1(
             @JsonProperty("make") final String make,
             @JsonProperty("model") final String model,
             @JsonProperty("colour") final String colour,
@@ -48,7 +48,7 @@ public class CreateCarRequestV1 {
     public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        final CreateCarRequestV1 that = (CreateCarRequestV1) o;
+        final CreateOrUpdateCarRequestV1 that = (CreateOrUpdateCarRequestV1) o;
         return year == that.year
                 && Objects.equals(make, that.make)
                 && Objects.equals(model, that.model)

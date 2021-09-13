@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -32,7 +33,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
 import uk.co.aaronvaz.carsapi.model.api.ModelDto;
-import uk.co.aaronvaz.carsapi.model.api.UpdateCarRequestV1;
+import uk.co.aaronvaz.carsapi.model.api.PartialUpdateCarRequestV1;
 
 @WebMvcTest(CarRestApiV1.class)
 class CarRestApiV1Test {
@@ -117,38 +118,66 @@ class CarRestApiV1Test {
         actions.andExpect(status().isInternalServerError());
     }
 
-    @ValueSource(
-            strings = {
-                "{ \"make\": \"Ford\", \"model\": \"Kuga\", \"colour\": \"Green\", \"year\": 2020 }",
-                "{ \"year\": 2010 }"
-            })
-    @ParameterizedTest
-    void update_HappyPathAndPartialUpdate_204NoContent(final String request) throws Exception {
+    @Test
+    void update_HappyPath_204NoContent() throws Exception {
         // given
         final UUID id = UUID.randomUUID();
+        willReturn(false).given(mockCarService).updateCar(eq(id), any());
+
+        final String request =
+                "{\n"
+                        + "  \"make\": \"Ford\",\n"
+                        + "  \"model\": \"Focus\",\n"
+                        + "  \"colour\": \"Blue\",\n"
+                        + "  \"year\": 2010\n"
+                        + "}";
 
         // when
-        final ResultActions resultActions =
+        final ResultActions actions =
                 mockMvc.perform(
                         put("/api/v1/cars/{id}", id)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request));
 
         // then
-        resultActions.andExpect(status().isNoContent());
-
-        verify(mockCarService)
-                .updateCar(id, objectMapper.readValue(request, UpdateCarRequestV1.class));
+        actions.andExpect(status().isNoContent());
     }
 
     @Test
-    void update_CarNotFound_404NotFound() throws Exception {
+    void update_CarDoesntExistAndWasCreated_201Created() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        willReturn(true).given(mockCarService).updateCar(eq(id), any());
+
+        final String request =
+                "{\n"
+                        + "  \"make\": \"Ford\",\n"
+                        + "  \"model\": \"Focus\",\n"
+                        + "  \"colour\": \"Blue\",\n"
+                        + "  \"year\": 2010\n"
+                        + "}";
+
+        // when
+        final ResultActions actions =
+                mockMvc.perform(
+                        put("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        final MvcResult mvcResult = actions.andExpect(status().isCreated()).andReturn();
+        final String locationHeader = mvcResult.getResponse().getHeader(HttpHeaders.LOCATION);
+
+        assertNotNull(locationHeader);
+        assertTrue(locationHeader.endsWith("/api/v1/cars/" + id));
+    }
+
+    @Test
+    void partialUpdate_InvalidJson_400BadRequest() throws Exception {
         // given
         final UUID id = UUID.randomUUID();
         final String request = "{ \"year\": 2000 }";
 
-        willThrow(CarNotFoundException.class).given(mockCarService).updateCar(eq(id), any());
-
         // when
         final ResultActions resultActions =
                 mockMvc.perform(
@@ -157,14 +186,22 @@ class CarRestApiV1Test {
                                 .content(request));
 
         // then
-        resultActions.andExpect(status().isNotFound());
+        resultActions.andExpect(status().isBadRequest());
+
+        verify(mockCarService, never()).updateCar(any(), any());
     }
 
     @Test
-    void update_InvalidId_400badRequest() throws Exception {
+    void update_InvalidId_400BadRequest() throws Exception {
         // given
         final String invalidId = "invalid";
-        final String request = "{ \"year\": 2000 }";
+        final String request =
+                "{\n"
+                        + "  \"make\": \"Ford\",\n"
+                        + "  \"model\": \"Focus\",\n"
+                        + "  \"colour\": \"Blue\",\n"
+                        + "  \"year\": 2010\n"
+                        + "}";
 
         // when
         final ResultActions resultActions =
@@ -183,7 +220,13 @@ class CarRestApiV1Test {
     void update_UncheckedException_500ServerError() throws Exception {
         // given
         final UUID id = UUID.randomUUID();
-        final String request = "{ \"year\": 2000 }";
+        final String request =
+                "{\n"
+                        + "  \"make\": \"Ford\",\n"
+                        + "  \"model\": \"Focus\",\n"
+                        + "  \"colour\": \"Blue\",\n"
+                        + "  \"year\": 2010\n"
+                        + "}";
 
         willThrow(RuntimeException.class).given(mockCarService).updateCar(eq(id), any());
 
@@ -191,6 +234,88 @@ class CarRestApiV1Test {
         final ResultActions resultActions =
                 mockMvc.perform(
                         put("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isInternalServerError());
+    }
+
+    @ValueSource(
+            strings = {
+                "{ \"make\": \"Ford\", \"model\": \"Kuga\", \"colour\": \"Green\", \"year\": 2020 }",
+                "{ \"year\": 2010 }"
+            })
+    @ParameterizedTest
+    void partialUpdate_FullOrPartialUpdate_204NoContent(final String request) throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        patch("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isNoContent());
+
+        verify(mockCarService)
+                .partialUpdateCar(
+                        id, objectMapper.readValue(request, PartialUpdateCarRequestV1.class));
+    }
+
+    @Test
+    void partialUpdate_CarNotFound_404NotFound() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        final String request = "{ \"year\": 2000 }";
+
+        willThrow(CarNotFoundException.class).given(mockCarService).partialUpdateCar(eq(id), any());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        patch("/api/v1/cars/{id}", id)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isNotFound());
+    }
+
+    @Test
+    void partialUpdate_InvalidId_400BadRequest() throws Exception {
+        // given
+        final String invalidId = "invalid";
+        final String request = "{ \"year\": 2000 }";
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        patch("/api/v1/cars/{id}", invalidId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(request));
+
+        // then
+        resultActions.andExpect(status().isBadRequest());
+
+        verify(mockCarService, never()).partialUpdateCar(any(), any());
+    }
+
+    @Test
+    void partialUpdate_UncheckedException_500ServerError() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        final String request = "{ \"year\": 2000 }";
+
+        willThrow(RuntimeException.class).given(mockCarService).partialUpdateCar(eq(id), any());
+
+        // when
+        final ResultActions resultActions =
+                mockMvc.perform(
+                        patch("/api/v1/cars/{id}", id)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(request));
 
