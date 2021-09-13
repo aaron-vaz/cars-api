@@ -6,7 +6,6 @@ import static org.mockito.BDDMockito.willReturn;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ class DatamuseRestApiTest {
         final SoundsLikeResponseV1 response = new SoundsLikeResponseV1("test", 100, 1);
         willReturn(new SoundsLikeResponseV1[] {response})
                 .given(mockRestTemplate)
-                .getForObject(URI.create("/words?sl=" + input), SoundsLikeResponseV1[].class);
+                .getForObject("/words?sl=" + input, SoundsLikeResponseV1[].class);
 
         // when
         final Collection<SoundsLikeResponseV1> responseItems = restApiV1.soundsLike(input);
@@ -45,7 +44,7 @@ class DatamuseRestApiTest {
         final String input = "giraffe";
         willReturn(new SoundsLikeResponseV1[0])
                 .given(mockRestTemplate)
-                .getForObject(URI.create("/words?sl=" + input), SoundsLikeResponseV1[].class);
+                .getForObject("/words?sl=" + input, SoundsLikeResponseV1[].class);
 
         // when
         final Collection<SoundsLikeResponseV1> responseItems = restApiV1.soundsLike(input);
@@ -61,7 +60,7 @@ class DatamuseRestApiTest {
         final String input = "ball";
         willThrow(exception)
                 .given(mockRestTemplate)
-                .getForObject(URI.create("/words?sl=" + input), SoundsLikeResponseV1[].class);
+                .getForObject("/words?sl=" + input, SoundsLikeResponseV1[].class);
 
         // when
         final Collection<SoundsLikeResponseV1> responseItems = restApiV1.soundsLike(input);
