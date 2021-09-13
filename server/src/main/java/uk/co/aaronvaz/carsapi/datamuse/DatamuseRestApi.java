@@ -1,6 +1,5 @@
 package uk.co.aaronvaz.carsapi.datamuse;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import org.slf4j.Logger;
@@ -31,12 +30,13 @@ public class DatamuseRestApi {
      * @return SoundsLikeResponseV1 which contains all the words that are homophones of the input
      */
     public Collection<SoundsLikeResponseV1> soundsLike(final String input) {
-        final URI uri =
+        final String uri =
                 UriComponentsBuilder.newInstance()
                         .path("/words")
                         .queryParam("sl", input)
                         .build()
-                        .toUri();
+                        .toUri()
+                        .toString();
 
         try {
             final SoundsLikeResponseV1[] response =

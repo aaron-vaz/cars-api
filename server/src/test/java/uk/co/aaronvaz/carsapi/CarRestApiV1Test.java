@@ -488,7 +488,7 @@ class CarRestApiV1Test {
                 new CarDto(UUID.randomUUID(), "VW", new ModelDto("Golf", ""), "Blue", 2012);
         willReturn(List.of(carDto))
                 .given(mockCarService)
-                .findCarsByMakeAndModel(carDto.getMake(), carDto.getModel().getModel());
+                .findCarsByMakeAndModel(carDto.getMake(), carDto.getModel().getName());
 
         // when
         final ResultActions resultActions =
@@ -496,7 +496,7 @@ class CarRestApiV1Test {
                         get(
                                         "/api/v1/cars/make/{make}/model/{model}",
                                         carDto.getMake(),
-                                        carDto.getModel().getModel())
+                                        carDto.getModel().getName())
                                 .accept(MediaType.APPLICATION_JSON));
 
         // then
