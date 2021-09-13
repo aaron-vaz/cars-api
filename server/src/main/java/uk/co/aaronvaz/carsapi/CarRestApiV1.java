@@ -226,10 +226,16 @@ class CarRestApiV1 {
      *     HTTP 200 OK
      * </pre>
      *
+     * Response if Car not found
+     *
+     * <pre>
+     *     HTTP 404 Not Found
+     * </pre>
+     *
      * @param id the id of the stored car
      */
     @DeleteMapping("/{id}")
-    void delete(@PathVariable final UUID id) {
+    void delete(@PathVariable final UUID id) throws CarNotFoundException {
         service.deleteCar(id);
     }
 

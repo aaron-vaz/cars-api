@@ -5,6 +5,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import uk.co.aaronvaz.carsapi.datamuse.DatamuseRestApi;
 import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
@@ -16,6 +19,8 @@ import uk.co.aaronvaz.carsapi.model.db.Car;
 
 @Service
 class CarService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(CarService.class);
+
     private final CarRepository repository;
 
     private final DatamuseRestApi datamuseRestApi;
@@ -115,8 +120,13 @@ class CarService {
      *
      * @param id the id of the {@link Car} to delete
      */
-    void deleteCar(final UUID id) {
-        repository.deleteById(id);
+    void deleteCar(final UUID id) throws CarNotFoundException {
+        try {
+            repository.deleteById(id);
+        } catch (final EmptyResultDataAccessException e) {
+            LOGGER.debug("No car with id: {} found for delete, ignoring", id);
+            throw new CarNotFoundException(id);
+        }
     }
 
     /**

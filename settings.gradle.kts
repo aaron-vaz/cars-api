@@ -1,2 +1,2 @@
 rootProject.name = "cars-api"
-include("server")
+include("integration-tests", "server")

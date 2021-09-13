@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.willAnswer;
 import static org.mockito.BDDMockito.willReturn;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -21,6 +22,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
+import org.springframework.dao.EmptyResultDataAccessException;
 import uk.co.aaronvaz.carsapi.datamuse.DatamuseRestApi;
 import uk.co.aaronvaz.carsapi.datamuse.model.SoundsLikeResponseV1;
 import uk.co.aaronvaz.carsapi.model.api.CarDto;
@@ -229,7 +231,7 @@ class CarServiceTest {
     }
 
     @Test
-    void deleteCar_HappyPath_CarDeleted() {
+    void deleteCar_HappyPath_CarDeleted() throws CarNotFoundException {
         // given
         final UUID id = UUID.randomUUID();
 
@@ -238,6 +240,19 @@ class CarServiceTest {
 
         // then
         verify(mockRepository).deleteById(id);
+    }
+
+    @Test
+    void deleteCar_CarNotFound_ExceptionNotThrown() {
+        // given
+        final UUID id = UUID.randomUUID();
+        willThrow(EmptyResultDataAccessException.class).given(mockRepository).deleteById(id);
+
+        // when
+        final Executable deleteCar = () -> carService.deleteCar(id);
+
+        // then
+        assertThrows(CarNotFoundException.class, deleteCar);
     }
 
     @Test

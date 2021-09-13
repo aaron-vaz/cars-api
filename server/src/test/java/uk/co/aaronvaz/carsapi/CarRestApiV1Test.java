@@ -402,6 +402,21 @@ class CarRestApiV1Test {
     }
 
     @Test
+    void delete_CarNotFound_404NotFound() throws Exception {
+        // given
+        final UUID id = UUID.randomUUID();
+        willThrow(CarNotFoundException.class).given(mockCarService).deleteCar(id);
+
+        // when
+        final ResultActions resultActions = mockMvc.perform(delete("/api/v1/cars/{id}", id));
+
+        // then
+        resultActions.andExpect(status().isNotFound());
+
+        verify(mockCarService).deleteCar(id);
+    }
+
+    @Test
     void delete_InvalidId_400BadRequest() throws Exception {
         // given
         final String invalidId = "invalid";
